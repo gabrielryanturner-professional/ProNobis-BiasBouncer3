@@ -86,6 +86,8 @@ def start_team():
         st.success("Work Complete")
         time.sleep(1)
 
+        st.write(stream_data)
+
 
 
 # --- Session State Initialization ---
