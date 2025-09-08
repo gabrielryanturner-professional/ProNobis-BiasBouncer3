@@ -71,9 +71,9 @@ def start_team():
             p3_percent = min(100, int((elapsed_time / duration_3) * 100))
             
             # Update each progress bar's value and text
-            status_1 = "Operational" if p1_percent == 100 else "Starting..."
-            status_2 = "Operational" if p2_percent == 100 else "Starting..."
-            status_3 = "Operational" if p3_percent == 100 else "Starting..."
+            status_1 = "Operational"
+            status_2 = "Operational"
+            status_3 = "Operational"
 
             progress_1.progress(p1_percent, text=f"Team Member 1 - {status_1}")
             progress_2.progress(p2_percent, text=f"Team Member 2 - {status_2}")
