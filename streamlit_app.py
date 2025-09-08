@@ -84,7 +84,7 @@ def start_team():
         # Brief pause after completion before showing success message
         time.sleep(0.5)
         success_message = st.success("Work Complete")
-        time.sleep(1)
+        time.sleep(2)
         success_message.empty()
         time.sleep(1)
 
@@ -132,7 +132,10 @@ if prompt := st.chat_input("Create a team or ask a question..."):
                 st.write("Analyzing requirements...")
                 time.sleep(2)
                 st.write("Assembling the optimal team...")
-                time.sleep(1)
+                time.sleep(0.5)
+                success_message = st.success("Team Creation Complete")
+                time.sleep(2)
+                success_message.empty()
             
             # Add a special dictionary to the history instead of the UI elements themselves.
             st.session_state.chat_history.append({
