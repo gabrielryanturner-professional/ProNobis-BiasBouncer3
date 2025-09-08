@@ -38,6 +38,9 @@ def create_team_tabs():
         st.subheader("Team Member 3")
         st.write("Detailed information and profile for Member 3.")
 
+def start_team():
+    with st.container(height=200, border=True):
+        st.write("Started")        
 
 # --- Session State Initialization ---
 # Initialize chat history if it doesn't exist.
@@ -55,6 +58,8 @@ with chat_container:
             # Check if the content is our special dictionary for rendering tabs.
             if isinstance(message["content"], dict) and message["content"].get("type") == "team_creation":
                 create_team_tabs()
+            if isinstance(message["content"], dict) and message["content"].get("type") == "team_start":
+                start_team()
             else:
                 # Otherwise, it's a regular text message.
                 st.markdown(message["content"])
@@ -73,7 +78,7 @@ if prompt := st.chat_input("Create a team or ask a question..."):
         if prompt.lower() == "create team":
             with st.status("Creating Team...", expanded=True):
                 st.write("Analyzing requirements...")
-                time.sleep(1)
+                time.sleep(2)
                 st.write("Assembling the optimal team...")
                 time.sleep(1)
             
@@ -81,6 +86,18 @@ if prompt := st.chat_input("Create a team or ask a question..."):
             st.session_state.chat_history.append({
                 "role": "assistant",
                 "content": {"type": "team_creation"}
+            })
+
+        elif prompt.lower() == "start team":
+            with st.status("Starting Team...", expanded=True):
+                st.write("Analyzing requirements...")
+                time.sleep(2)
+                st.write("Starting team tasks...")
+                time.sleep(1)
+            
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": {"type": "team_start"}
             })
 
         # Handle all other prompts
