@@ -94,7 +94,7 @@ if prompt := st.chat_input("Create a team or ask a question..."):
             })
 
         elif prompt.lower() == "start team":
-            with st.status("Creating Team...", expanded=True):
+            with st.status("Starting Team...", expanded=True):
                 st.write("Analyzing requirements...")
                 time.sleep(2)
                 st.write("Starting the team...")
@@ -103,7 +103,7 @@ if prompt := st.chat_input("Create a team or ask a question..."):
             # Add a special dictionary to the history instead of the UI elements themselves.
             st.session_state.chat_history.append({
                 "role": "assistant",
-                "content": {"type": "team_creation"}
+                "content": {"type": "start_team"}
             })
 
         # Handle all other prompts
