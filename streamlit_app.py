@@ -37,14 +37,13 @@ def create_team_tabs():
     with tab3:
         st.subheader("Team Member 3")
         st.write("Detailed information and profile for Member 3.")
-    time.sleep(2)
     st.divider()
 
 def start_team():
     """Displays three concurrent progress bars with different completion speeds."""
     start_container = st.container(height=300, border=True)
     with start_container:
-        st.write("System check in progress...")
+        st.write("Teamwork now in progress...")
         
         # Initialize all progress bars first
         progress_1 = st.progress(0, text="Team Member 1 - Initializing...")
@@ -58,7 +57,7 @@ def start_team():
         duration_3 = 3.0  # Medium
         
         # Use a small time step for a smooth animation
-        time_step = 0.02
+        time_step = 0.1
         max_duration = max(duration_1, duration_2, duration_3)
         num_steps = int(max_duration / time_step)
 
@@ -84,7 +83,7 @@ def start_team():
         
         # Brief pause after completion before showing success message
         time.sleep(0.5)
-        st.success("All Team Members are Operational!")
+        st.success("Work Complete")
         time.sleep(1)
 
 
