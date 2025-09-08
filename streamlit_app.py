@@ -83,7 +83,9 @@ def start_team():
         
         # Brief pause after completion before showing success message
         time.sleep(0.5)
-        st.success("Work Complete")
+        success_message = st.success("Work Complete")
+        time.sleep(1)
+        success_message.empty()
         time.sleep(1)
 
     st.write(stream_data)
