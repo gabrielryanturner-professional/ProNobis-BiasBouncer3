@@ -43,7 +43,27 @@ def create_team_tabs():
 def start_team():
     start_container = st.container(height=300, border=True)
     with start_container:
-        st.write("Started.")
+        status_1 = "Operational"
+        status_2 = "Operational"
+        status_3 = "Operational"
+        progress_1 = st.progress(0, text=f"Team Member 1 - {status_1}")
+        for percent_complete in range(100):
+            time.sleep(0.01)
+            progress_1.progress(percent_complete + 1, text=f"Team Member 1 - {status_1}")
+        time.sleep(1)
+        st.divider()
+        progress_2 = st.progress(0, text=f"Team Member 2 - {status_2}")
+        for percent_complete in range(100):
+            time.sleep(0.01)
+            progress_2.progress(percent_complete + 1, text=f"Team Member 2 - {status_2}")
+        time.sleep(1)
+        st.divider()
+        progress_3 = st.progress(0, text=f"Team Member 3 - {status_3}")
+        for percent_complete in range(100):
+            time.sleep(0.01)
+            progress_3.progress(percent_complete + 1, text=f"Team Member 3 - {status_3}")
+        time.sleep(1)
+
 
 
 # --- Session State Initialization ---
@@ -80,11 +100,13 @@ if prompt := st.chat_input("Create a team or ask a question..."):
     with st.chat_message("assistant"):
         # Handle the specific "Create Team" command
         if prompt.lower() == "create team":
-            with st.status("Creating Team...", expanded=True):
+            creation_status = st.status("Creating Team...", expanded=True)
+            with creation_status:
                 st.write("Analyzing requirements...")
                 time.sleep(2)
                 st.write("Assembling the optimal team...")
                 time.sleep(1)
+            creation_status.empty()
             
             # Add a special dictionary to the history instead of the UI elements themselves.
             st.session_state.chat_history.append({
@@ -93,11 +115,13 @@ if prompt := st.chat_input("Create a team or ask a question..."):
             })
 
         elif prompt.lower() == "start team":
-            with st.status("Starting Team...", expanded=True):
+            start_status = st.status("Starting Team...", expanded=True)
+            with start_status:
                 st.write("Analyzing requirements...")
                 time.sleep(2)
                 st.write("Starting the team...")
                 time.sleep(1)
+            start_status.empty()
             
             # Add a special dictionary to the history instead of the UI elements themselves.
             st.session_state.chat_history.append({
