@@ -25,6 +25,47 @@ def stream_data():
         yield word + " "
         time.sleep(0.02)
 
+def start_team():
+    """Displays three concurrent progress bars with different completion speeds."""
+    progress_container = st.container(border=True)
+    with progress_container:
+        st.write("Assembling the optimal team...")
+        
+        # Initialize the progress bars
+        progress_1 = st.progress(0, text="Team Member 1 - Initializing...")
+        progress_2 = st.progress(0, text="Team Member 2 - Initializing...")
+        progress_3 = st.progress(0, text="Team Member 3 - Initializing...")
+
+        # Define total duration for each bar to complete in seconds
+        duration_1 = 1.5  # Fastest
+        duration_2 = 3.0  # Slowest
+        duration_3 = 2.2  # Medium
+        
+        # Use a small time step for a smooth animation
+        time_step = 0.02
+        max_duration = max(duration_1, duration_2, duration_3)
+        num_steps = int(max_duration / time_step)
+
+        for i in range(num_steps + 1):
+            elapsed_time = i * time_step
+            
+            # Calculate the current percentage for each bar
+            p1_percent = min(100, int((elapsed_time / duration_1) * 100))
+            p2_percent = min(100, int((elapsed_time / duration_2) * 100))
+            p3_percent = min(100, int((elapsed_time / duration_3) * 100))
+            
+            # Update each progress bar with its current percentage
+            progress_1.progress(p1_percent, text=f"Team Member 1 - {p1_percent}% Complete")
+            progress_2.progress(p2_percent, text=f"Team Member 2 - {p2_percent}% Complete")
+            progress_3.progress(p3_percent, text=f"Team Member 3 - {p3_percent}% Complete")
+            
+            time.sleep(time_step)
+        
+        # Brief pause after completion before showing success message
+        time.sleep(0.5)
+        st.success("Team Assembly Complete!")
+        time.sleep(1)
+
 def create_team_tabs():
     """A helper function to render the team member tabs consistently."""
     tab1, tab2, tab3 = st.tabs(["Member 1", "Member 2", "Member 3"])
@@ -37,33 +78,6 @@ def create_team_tabs():
     with tab3:
         st.subheader("Team Member 3")
         st.write("Detailed information and profile for Member 3.")
-    time.sleep(2)
-    st.divider()
-
-def start_team():
-    start_container = st.container(height=300, border=True)
-    with start_container:
-        status_1 = "Operational"
-        status_2 = "Operational"
-        status_3 = "Operational"
-        progress_1 = st.progress(0, text=f"Team Member 1 - {status_1}")
-        for percent_complete in range(100):
-            time.sleep(0.01)
-            progress_1.progress(percent_complete + 1, text=f"Team Member 1 - {status_1}")
-        time.sleep(1)
-        st.divider()
-        progress_2 = st.progress(0, text=f"Team Member 2 - {status_2}")
-        for percent_complete in range(100):
-            time.sleep(0.01)
-            progress_2.progress(percent_complete + 1, text=f"Team Member 2 - {status_2}")
-        time.sleep(1)
-        st.divider()
-        progress_3 = st.progress(0, text=f"Team Member 3 - {status_3}")
-        for percent_complete in range(100):
-            time.sleep(0.01)
-            progress_3.progress(percent_complete + 1, text=f"Team Member 3 - {status_3}")
-        time.sleep(1)
-
 
 
 # --- Session State Initialization ---
@@ -74,7 +88,7 @@ if "chat_history" not in st.session_state:
 
 # --- Display Chat History ---
 # We'll use a container with a fixed height to make the chat scrollable.
-chat_container = st.container(height=600, border=False)
+chat_container = st.container(height=600)
 with chat_container:
     # This loop is the single source of truth for what is displayed on the screen.
     for message in st.session_state.chat_history:
@@ -82,8 +96,6 @@ with chat_container:
             # Check if the content is our special dictionary for rendering tabs.
             if isinstance(message["content"], dict) and message["content"].get("type") == "team_creation":
                 create_team_tabs()
-            elif isinstance(message["content"], dict) and message["content"].get("type") == "start_team":
-                start_team()
             else:
                 # Otherwise, it's a regular text message.
                 st.markdown(message["content"])
@@ -100,33 +112,13 @@ if prompt := st.chat_input("Create a team or ask a question..."):
     with st.chat_message("assistant"):
         # Handle the specific "Create Team" command
         if prompt.lower() == "create team":
-            creation_status = st.status("Creating Team...", expanded=True)
-            with creation_status:
-                st.write("Analyzing requirements...")
-                time.sleep(2)
-                st.write("Assembling the optimal team...")
-                time.sleep(1)
-            creation_status.empty()
+            # Call the function to display concurrent progress bars
+            start_team()
             
             # Add a special dictionary to the history instead of the UI elements themselves.
             st.session_state.chat_history.append({
                 "role": "assistant",
                 "content": {"type": "team_creation"}
-            })
-
-        elif prompt.lower() == "start team":
-            start_status = st.status("Starting Team...", expanded=True)
-            with start_status:
-                st.write("Analyzing requirements...")
-                time.sleep(2)
-                st.write("Starting the team...")
-                time.sleep(1)
-            start_status.empty()
-            
-            # Add a special dictionary to the history instead of the UI elements themselves.
-            st.session_state.chat_history.append({
-                "role": "assistant",
-                "content": {"type": "start_team"}
             })
 
         # Handle all other prompts
@@ -148,4 +140,3 @@ with st.sidebar:
     if st.button("Clear Chat History"):
         st.session_state.chat_history = []
         st.rerun()
-
