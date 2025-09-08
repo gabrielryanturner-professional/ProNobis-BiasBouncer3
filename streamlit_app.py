@@ -46,15 +46,18 @@ if "chat_history" not in st.session_state:
 
 
 # --- Display Chat History ---
-# This loop is the single source of truth for what is displayed on the screen.
-for message in st.session_state.chat_history:
-    with st.chat_message(message["role"]):
-        # Check if the content is our special dictionary for rendering tabs.
-        if isinstance(message["content"], dict) and message["content"].get("type") == "team_creation":
-            create_team_tabs()
-        else:
-            # Otherwise, it's a regular text message.
-            st.markdown(message["content"])
+# We'll use a container with a fixed height to make the chat scrollable.
+chat_container = st.container(height=600)
+with chat_container:
+    # This loop is the single source of truth for what is displayed on the screen.
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            # Check if the content is our special dictionary for rendering tabs.
+            if isinstance(message["content"], dict) and message["content"].get("type") == "team_creation":
+                create_team_tabs()
+            else:
+                # Otherwise, it's a regular text message.
+                st.markdown(message["content"])
 
 
 # --- Handle New User Input ---
@@ -99,3 +102,4 @@ with st.sidebar:
     if st.button("Clear Chat History"):
         st.session_state.chat_history = []
         st.rerun()
+
