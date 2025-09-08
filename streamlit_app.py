@@ -47,7 +47,7 @@ if "chat_history" not in st.session_state:
 
 # --- Display Chat History ---
 # We'll use a container with a fixed height to make the chat scrollable.
-chat_container = st.container(height=600)
+chat_container = st.container(height=600, border=False)
 with chat_container:
     # This loop is the single source of truth for what is displayed on the screen.
     for message in st.session_state.chat_history:
