@@ -5,6 +5,9 @@ st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBounc
 
 prompt = st.chat_input("Create Team")
 
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
+
 mock_answer = "This is a mock AI answer. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
 def stream_data():
@@ -38,11 +41,10 @@ if prompt == "Create Team":
 elif prompt == None:
     pass
 else:
-    with st.chat_message("user"):
-        st.write(f"{prompt}")
-        time.sleep(2)
-    with st.chat_message("assistant"):
-        st.write(stream_data)
+    st.session_state["chat_history"].append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
+    time.sleep(2)
+    st.chat_message("assistant").write(stream_data)
 
 with st.sidebar:
     st.header("Previous Chats")
