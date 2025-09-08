@@ -41,7 +41,7 @@ def create_team_tabs():
 
 def start_team():
     """Displays three concurrent progress bars with different completion speeds."""
-    start_container = st.container(height=300, border=True)
+    start_container = st.container(border=True)
     with start_container:
         st.write("Teamwork now in progress...")
         
