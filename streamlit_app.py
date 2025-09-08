@@ -36,3 +36,6 @@ elif prompt == None:
     pass
 else:
     st.write(stream_data)
+
+with st.sidebar():
+    st.header("Previous Chats")
