@@ -86,7 +86,8 @@ def start_team():
         st.success("Work Complete")
         time.sleep(1)
 
-        st.write(stream_data)
+    st.write(stream_data)
+    st.button("View Documents")
 
 
 
