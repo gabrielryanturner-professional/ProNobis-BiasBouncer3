@@ -19,16 +19,16 @@ if prompt == "Create Team":
         st.write("Finalizing Roles...")
         time.sleep(2)
 
-    col1, col2, col3 = st.columns(3, border=True)
-    with col1:
+    tab1, tab2, tab3 = st.tabs(["Member 1", "Member 2", "Member 3"])
+    with tab1:
         st.subheader("Member 1")
         st.divider()
         st.write("Info")
-    with col2:
+    with tab2:
         st.subheader("Member 2")
         st.divider()
         st.write("Info")
-    with col3:
+    with tab3:
         st.subheader("Member 3")
         st.divider()
         st.write("Info")
