@@ -12,5 +12,7 @@ if prompt == "Create Team":
         st.write("Member 2")
     with col3:
         st.write("Member 3")
+elif prompt == None:
+    pass
 else:
-    st.write(f"User said: {prompt}")
+    st.write(f"User said:{prompt}")
