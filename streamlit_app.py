@@ -13,6 +13,9 @@ def stream_data():
         time.sleep(0.02)
 
 if prompt == "Create Team":
+    with st.chat_message("user"):
+        st.write(f"{prompt}")
+        time.sleep(2)
     with st.status("Creating Team..."):
         st.write("Doing Research...")
         time.sleep(2)
@@ -35,7 +38,11 @@ if prompt == "Create Team":
 elif prompt == None:
     pass
 else:
-    st.write(stream_data)
+    with st.chat_message("user"):
+        st.write(f"{prompt}")
+        time.sleep(2)
+    with st.chat_message("assistant"):
+        st.write(stream_data)
 
 with st.sidebar:
     st.header("Previous Chats")
