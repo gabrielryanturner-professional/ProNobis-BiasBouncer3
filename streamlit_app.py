@@ -41,6 +41,11 @@ def create_team_tabs():
     st.divider()
     st.write(stream_data)
 
+def start_team():
+    start_container = st.container(height=300, border=True)
+    with start_container:
+        st.write("Started.")
+
 
 # --- Session State Initialization ---
 # Initialize chat history if it doesn't exist.
@@ -58,6 +63,8 @@ with chat_container:
             # Check if the content is our special dictionary for rendering tabs.
             if isinstance(message["content"], dict) and message["content"].get("type") == "team_creation":
                 create_team_tabs()
+            elif isinstance(message["content"], dict) and message["content"].get("type") == "start_team":
+                start_team()
             else:
                 # Otherwise, it's a regular text message.
                 st.markdown(message["content"])
@@ -76,8 +83,21 @@ if prompt := st.chat_input("Create a team or ask a question..."):
         if prompt.lower() == "create team":
             with st.status("Creating Team...", expanded=True):
                 st.write("Analyzing requirements...")
-                time.sleep(1)
+                time.sleep(2)
                 st.write("Assembling the optimal team...")
+                time.sleep(1)
+            
+            # Add a special dictionary to the history instead of the UI elements themselves.
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": {"type": "team_creation"}
+            })
+
+        elif prompt.lower() == "start team":
+            with st.status("Creating Team...", expanded=True):
+                st.write("Analyzing requirements...")
+                time.sleep(2)
+                st.write("Starting the team...")
                 time.sleep(1)
             
             # Add a special dictionary to the history instead of the UI elements themselves.
