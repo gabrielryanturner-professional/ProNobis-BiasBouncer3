@@ -5,7 +5,7 @@ st.markdown("<h1 style='text-align: center;'><span style='color: red;'>BiasBounc
 
 prompt = st.chat_input("Create Team")
 if prompt == "Create Team":
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns(3, border=True)
     with col1:
         st.write("Member 1")
     with col2:
