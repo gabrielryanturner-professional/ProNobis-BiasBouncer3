@@ -18,13 +18,20 @@ if prompt == "Create Team":
         time.sleep(2)
         st.write("Finalizing Roles...")
         time.sleep(2)
+
     col1, col2, col3 = st.columns(3, border=True)
     with col1:
-        st.write("Member 1")
+        st.subheader("Member 1")
+        st.divider()
+        st.write("Info")
     with col2:
-        st.write("Member 2")
+        st.subheader("Member 2")
+        st.divider()
+        st.write("Info")
     with col3:
-        st.write("Member 3")
+        st.subheader("Member 3")
+        st.divider()
+        st.write("Info")
 elif prompt == None:
     pass
 else:
