@@ -39,7 +39,6 @@ def create_team_tabs():
         st.write("Detailed information and profile for Member 3.")
     time.sleep(2)
     st.divider()
-    st.write(stream_data)
 
 def start_team():
     start_container = st.container(height=300, border=True)
