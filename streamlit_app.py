@@ -39,7 +39,7 @@ def create_team_tabs():
         st.write("Detailed information and profile for Member 3.")
     time.sleep(2)
     st.divider()
-    st.write("Is this the team you want?")
+    st.write(stream_data)
 
 
 # --- Session State Initialization ---
