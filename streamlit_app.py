@@ -37,6 +37,9 @@ def create_team_tabs():
     with tab3:
         st.subheader("Team Member 3")
         st.write("Detailed information and profile for Member 3.")
+    time.sleep(2)
+    st.divider()
+    st.write("Is this the team you want?")
 
 
 # --- Session State Initialization ---
