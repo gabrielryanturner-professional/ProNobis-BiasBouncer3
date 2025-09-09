@@ -148,17 +148,17 @@ def render_edit_dialog():
         
         st.divider()
 
-        st.subheader("AI-Assisted Editing")
-        
-        # Display agent-specific chat history
-        for message in st.session_state.agent_chat_histories.get(agent_index, []):
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+        chat_container = st.container(height=300, border=True)
+        with chat_container:
+            st.subheader("AI-Assisted Editing")
+            
+            # Display agent-specific chat history
+            for message in st.session_state.agent_chat_histories.get(agent_index, []):
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
 
-        # Agent-specific chat input
-        if agent_prompt := st.chat_input("Ask AI to make changes..."):
-            chat_container = st.container(height=300, border=True)
-            with chat_container:
+            # Agent-specific chat input
+            if agent_prompt := st.chat_input("Ask AI to make changes..."):
                 st.session_state.agent_chat_histories[agent_index].append({"role": "user", "content": agent_prompt})
                 
                 # Construct the context for the editing AI
