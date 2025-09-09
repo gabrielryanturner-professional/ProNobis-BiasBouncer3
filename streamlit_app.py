@@ -15,8 +15,13 @@ You are BiasBouncer, an expert AI team creation assistant.
 Your primary goal is to help users build a diversified team of AI agents to accomplish a specific task.
 When a user wants to create a team, you must guide them. Ask clarifying questions to understand their goal.
 Once you have enough information, you MUST call the `create_team` function to generate the team members.
+
+For each team member, you must provide a detailed description formatted as a bulleted list (using markdown like `- Point 1`). This description must cover at least three points:
+1.  A more detailed explanation of its role and core responsibilities.
+2.  How it will go about accomplishing its tasks (its methodology or process).
+3.  What the ideal end product or outcome of its specific role is.
+
 Do not just list the team members in text; you must use the provided tool to create them.
-For example, if the user says "create a team for writing a blog post", you should call the `create_team` function with appropriate members like a "Researcher", a "Writer", and an "Editor", each with a descriptive role.
 """
 
 # --- API Key and Client Initialization ---
@@ -44,7 +49,6 @@ def create_team(team_members):
     This function is called by the AI model.
     """
     st.session_state.team_details = team_members
-    # We return a confirmation message that can be shown to the user if needed.
     return f"Successfully created a team with {len(team_members)} members."
 
 # This is the schema that describes the `create_team` function to the AI.
@@ -65,7 +69,10 @@ tools = [
                             "properties": {
                                 "name": {"type": "string", "description": "The name of the team member."},
                                 "role": {"type": "string", "description": "The specific role or job title of the member."},
-                                "description": {"type": "string", "description": "A detailed description of the member's responsibilities and expertise."}
+                                "description": {
+                                    "type": "string",
+                                    "description": "A detailed, multi-point description of the member's responsibilities, formatted as a markdown bulleted list. Must cover their detailed role, their process, and the ideal outcome of their work."
+                                }
                             },
                             "required": ["name", "role", "description"]
                         }
@@ -85,8 +92,11 @@ def create_team_tabs():
         tabs = st.tabs([member["name"] for member in team_members])
         for i, member in enumerate(team_members):
             with tabs[i]:
-                st.subheader(member["role"])
-                st.write(member["description"])
+                st.subheader(member["name"])
+                st.divider()
+                st.markdown(f"**Role:** {member['role']}")
+                st.markdown("**Description:**")
+                st.markdown(member["description"])
         st.divider()
     else:
         st.error("Team details not found in session state.")
@@ -98,15 +108,15 @@ def start_team():
     with start_container:
         st.write("Teamwork now in progress...")
         progress_bars = {
-            f"progress_{i}": st.progress(0, text=f"Team Member {i+1} - Initializing...")
+            f"progress_{i}": st.progress(0, text=f"{st.session_state.team_details[i]['name']} - Initializing...")
             for i in range(len(st.session_state.get("team_details", [])))
         }
 
         # Simulate work
         for percent_complete in range(100):
             time.sleep(0.03)
-            for bar in progress_bars.values():
-                bar.progress(percent_complete + 1, text="Operational")
+            for i, bar in enumerate(progress_bars.values()):
+                bar.progress(percent_complete + 1, text=f"{st.session_state.team_details[i]['name']} - Operational")
         
         time.sleep(0.5)
         success_message = st.success("Work Complete")
@@ -143,15 +153,22 @@ if prompt := st.chat_input("Describe the team you want to create..."):
     with st.chat_message("assistant"):
         # Handle "start team" command locally as it's a UI-only action
         if prompt.lower() == "start team":
-            start_status = st.status("Starting Team...", expanded=True)
-            with start_status:
-                st.write("Initializing systems...")
-                time.sleep(1)
-            st.session_state.chat_history.append({
-                "role": "assistant",
-                "content": {"type": "start_team"}
-            })
-        
+            if st.session_state.team_details:
+                start_status = st.status("Starting Team...", expanded=True)
+                with start_status:
+                    st.write("Initializing systems...")
+                    time.sleep(1)
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": {"type": "start_team"}
+                })
+            else:
+                st.warning("Please create a team before starting one.")
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": "You need to create a team first! How can I help you build one?"
+                })
+
         # For all other prompts, interact with the AI
         else:
             if not client:
@@ -182,12 +199,10 @@ if prompt := st.chat_input("Describe the team you want to create..."):
                         function_name = tool_call.function.name
                         
                         if function_name == "create_team":
-                            # It wants to create a team, so we execute the function
                             function_args = json.loads(tool_call.function.arguments)
                             function_response = create_team(
                                 team_members=function_args.get("team_members")
                             )
-                            # Add a special message to history to render the tabs
                             st.session_state.chat_history.append({
                                 "role": "assistant",
                                 "content": {"type": "team_creation"}
@@ -205,4 +220,3 @@ if prompt := st.chat_input("Describe the team you want to create..."):
 
     # Rerun the script to display the latest updates
     st.rerun()
-
