@@ -136,7 +136,7 @@ def render_edit_dialog():
     agent_index = st.session_state.editing_agent_index
     agent = st.session_state.team_details[agent_index]
 
-    @st.dialog(f"Editing {agent['name']}")
+    @st.dialog(f"{agent['name']}")
     def show_edit_dialog():
         """Defines and displays the content of the edit dialog."""
         st.subheader("Edit Agent Details")
@@ -150,7 +150,7 @@ def render_edit_dialog():
 
         chat_container = st.container(height=300, border=True)
         with chat_container:
-            st.subheader("AI-Assisted Editing")
+            st.subheader(f"Chat with {agent['name']}")
             
             # Display agent-specific chat history
             for message in st.session_state.agent_chat_histories.get(agent_index, []):
