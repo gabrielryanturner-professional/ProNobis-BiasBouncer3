@@ -273,4 +273,3 @@ if prompt := st.chat_input("Describe the team you want to create...", accept_fil
                 st.error(f"An error occurred: {e}")
 
     st.rerun()
-
