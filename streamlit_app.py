@@ -133,67 +133,68 @@ def create_team_tabs():
                     st.rerun()
         st.divider()
 
+agent_index = st.session_state.editing_agent_index
+agent = st.session_state.team_details[agent_index]
+@st.modal(f"Editing {agent['name']}")
 def render_edit_dialog():
-    """Renders the modal dialog for editing an agent."""
-    agent_index = st.session_state.editing_agent_index
-    agent = st.session_state.team_details[agent_index]
+    """Renders the m dialog for editing an agent."""
 
-    with st.dialogue(f"Editing {agent['name']}"):
-        st.subheader("Edit Agent Details")
+    st.subheader("Edit Agent Details")
         
         # Manual editing fields with auto-saving
-        st.text_input("Name", value=agent["name"], key=f"edit_{agent_index}_name", on_change=handle_agent_detail_change, args=(agent_index, "name"))
-        st.text_input("Role", value=agent["role"], key=f"edit_{agent_index}_role", on_change=handle_agent_detail_change, args=(agent_index, "role"))
-        st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=250, on_change=handle_agent_detail_change, args=(agent_index, "description"))
+    st.text_input("Name", value=agent["name"], key=f"edit_{agent_index}_name", on_change=handle_agent_detail_change, args=(agent_index, "name"))
+    st.text_input("Role", value=agent["role"], key=f"edit_{agent_index}_role", on_change=handle_agent_detail_change, args=(agent_index, "role"))
+    st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=250, on_change=handle_agent_detail_change, args=(agent_index, "description"))
         
-        st.divider()
+    st.divider()
 
-        st.subheader("AI-Assisted Editing")
+    st.subheader("AI-Assisted Editing")
         
         # Display agent-specific chat history
-        for message in st.session_state.agent_chat_histories.get(agent_index, []):
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+    for message in st.session_state.agent_chat_histories.get(agent_index, []):
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
         # Agent-specific chat input
-        if agent_prompt := st.chat_input("Ask AI to make changes..."):
-            st.session_state.agent_chat_histories[agent_index].append({"role": "user", "content": agent_prompt})
+    if agent_prompt := st.chat_input("Ask AI to make changes..."):
+        st.session_state.agent_chat_histories[agent_index].append({"role": "user", "content": agent_prompt})
             
             # Construct the context for the editing AI
-            current_details = f"Current Agent Details:\nName: {agent['name']}\nRole: {agent['role']}\nDescription:\n{agent['description']}"
+        current_details = f"Current Agent Details:\nName: {agent['name']}\nRole: {agent['role']}\nDescription:\n{agent['description']}"
             
-            edit_api_messages = [
-                {"role": "system", "content": f"{EDIT_SYSTEM_PROMPT}\n\n{current_details}"}
-            ] + st.session_state.agent_chat_histories[agent_index]
+        edit_api_messages = [
+            {"role": "system", "content": f"{EDIT_SYSTEM_PROMPT}\n\n{current_details}"}
+        ] + st.session_state.agent_chat_histories[agent_index]
 
-            try:
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=edit_api_messages,
-                    tools=tools,
-                    tool_choice="auto"
-                )
-                response_message = response.choices[0].message
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=edit_api_messages,
+                tools=tools,
+                tool_choice="auto"
+            )
+            response_message = response.choices[0].message
                 
-                if response_message.tool_calls:
-                    tool_call = response_message.tool_calls[0]
-                    if tool_call.function.name == "update_agent_details":
-                        function_args = json.loads(tool_call.function.arguments)
-                        # The AI doesn't know the index, so we add it
-                        function_args['index'] = agent_index
-                        update_agent_details(**function_args)
-                else:
-                    # Regular text response from the edit AI
-                    st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": response_message.content})
+            if response_message.tool_calls:
+                tool_call = response_message.tool_calls[0]
+                if tool_call.function.name == "update_agent_details":
+                    function_args = json.loads(tool_call.function.arguments)
+                    # The AI doesn't know the index, so we add it
+                    function_args['index'] = agent_index
+                    update_agent_details(**function_args)
+            else:
+                # Regular text response from the edit AI
+                st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": response_message.content})
                 
-                st.rerun()
-
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-
-        if st.button("Close"):
-            del st.session_state.editing_agent_index
             st.rerun()
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+
+    if st.button("Close"):
+        del st.session_state.editing_agent_index
+        st.rerun()
+        
 
 
 # --- Session State Initialization ---
