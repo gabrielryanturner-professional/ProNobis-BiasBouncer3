@@ -61,8 +61,6 @@ def update_agent_details(index, name, role, description):
     """Updates the details of a specific agent in the session state."""
     if 0 <= index < len(st.session_state.team_details):
         st.session_state.team_details[index] = {"name": name, "role": role, "description": description}
-        # Clear the agent's chat history after an update to start fresh
-        st.session_state.agent_chat_histories[index] = []
         return "Agent details updated successfully."
     return "Error: Invalid agent index."
 
@@ -182,7 +180,8 @@ def render_edit_dialog():
                     if tool_call.function.name == "update_agent_details":
                         function_args = json.loads(tool_call.function.arguments)
                         function_args['index'] = agent_index
-                        update_agent_details(**function_args)
+                        result = update_agent_details(**function_args)
+                        st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": result})
                 else:
                     st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": response_message.content})
                 
@@ -270,3 +269,4 @@ if prompt := st.chat_input("Describe the team you want to create..."):
                 st.error(f"An error occurred: {e}")
 
     st.rerun()
+
