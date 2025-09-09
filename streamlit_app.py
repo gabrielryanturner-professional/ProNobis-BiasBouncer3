@@ -1,134 +1,132 @@
 import streamlit as st
 import time
+import json
 import openai
 from openai import OpenAI
 
 # --- Page Config and Title ---
-# Set the page configuration at the beginning of the script.
 st.set_page_config(page_title="BiasBouncer", layout="centered")
-
 st.markdown("<h1 style='text-align: center; color: red;'>BiasBouncer</h1>", unsafe_allow_html=True)
 
+# --- System Prompt for the AI ---
+# This guides the AI on its role and how to interact with the user.
+SYSTEM_PROMPT = """
+You are BiasBouncer, an expert AI team creation assistant. 
+Your primary goal is to help users build a diversified team of AI agents to accomplish a specific task.
+When a user wants to create a team, you must guide them. Ask clarifying questions to understand their goal.
+Once you have enough information, you MUST call the `create_team` function to generate the team members.
+Do not just list the team members in text; you must use the provided tool to create them.
+For example, if the user says "create a team for writing a blog post", you should call the `create_team` function with appropriate members like a "Researcher", a "Writer", and an "Editor", each with a descriptive role.
+"""
+
 # --- API Key and Client Initialization ---
-# Get the API key from Streamlit secrets or sidebar input.
 openai_api_key = st.secrets.get("OPENAI_API_KEY")
 
 with st.sidebar:
     st.header("Chat Controls")
-    # Allow user to enter their API key if not found in secrets
     if not openai_api_key:
         openai_api_key = st.text_input("Enter your OpenAI API Key:", type="password", key="api_key_input")
     
     if st.button("Clear Chat History"):
-        st.session_state.chat_history = []
+        st.session_state.clear()
         st.rerun()
 
-# Initialize the OpenAI client if the key is available.
 client = None
 if openai_api_key:
     client = OpenAI(api_key=openai_api_key)
 else:
-    # Display a warning message in the main chat area if no key is provided.
-    st.info("Please enter your OpenAI API key in the sidebar to start chatting.")
+    st.info("Please enter your OpenAI API key in the sidebar to start.")
 
-
-# --- Helper Functions for UI Rendering ---
-def get_ai_response_stream(api_client, history):
+# --- Tool & Function Definitions ---
+def create_team(team_members):
     """
-    Yields chunks from the OpenAI API stream for a real-time chat effect.
+    Stores the generated team member details in the session state.
+    This function is called by the AI model.
     """
-    # Filter out internal, non-string messages before sending to the API.
-    api_messages = [
-        {"role": msg["role"], "content": msg["content"]}
-        for msg in history
-        if isinstance(msg["content"], str)
-    ]
+    st.session_state.team_details = team_members
+    # We return a confirmation message that can be shown to the user if needed.
+    return f"Successfully created a team with {len(team_members)} members."
 
-    try:
-        # Create a streaming chat completion request.
-        stream = api_client.chat.completions.create(
-            model="gpt-4o",  # Using a powerful and efficient model
-            messages=api_messages,
-            stream=True,
-        )
-        # Yield each content chunk as it arrives.
-        for chunk in stream:
-            content = chunk.choices[0].delta.content
-            if content:
-                yield content
-    except openai.AuthenticationError:
-        # Handle cases where the API key is invalid.
-        yield "Authentication Error: Please check your OpenAI API key in the sidebar."
-    except Exception as e:
-        # Handle other potential API errors.
-        yield f"An error occurred: {e}"
+# This is the schema that describes the `create_team` function to the AI.
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "create_team",
+            "description": "Creates a team of AI agents with specified names, roles, and descriptions.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "team_members": {
+                        "type": "array",
+                        "description": "A list of team members.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string", "description": "The name of the team member."},
+                                "role": {"type": "string", "description": "The specific role or job title of the member."},
+                                "description": {"type": "string", "description": "A detailed description of the member's responsibilities and expertise."}
+                            },
+                            "required": ["name", "role", "description"]
+                        }
+                    }
+                },
+                "required": ["team_members"]
+            }
+        }
+    }
+]
 
-
+# --- UI Helper Functions ---
 def create_team_tabs():
-    """Renders the team member tabs consistently."""
-    tab1, tab2, tab3 = st.tabs(["Member 1", "Member 2", "Member 3"])
-    with tab1:
-        st.subheader("Team Member 1")
-        st.write("Detailed information and profile for Member 1.")
-    with tab2:
-        st.subheader("Team Member 2")
-        st.write("Detailed information and profile for Member 2.")
-    with tab3:
-        st.subheader("Team Member 3")
-        st.write("Detailed information and profile for Member 3.")
-    st.divider()
+    """Renders team member tabs from session state if details exist."""
+    if "team_details" in st.session_state and st.session_state.team_details:
+        team_members = st.session_state.team_details
+        tabs = st.tabs([member["name"] for member in team_members])
+        for i, member in enumerate(team_members):
+            with tabs[i]:
+                st.subheader(member["role"])
+                st.write(member["description"])
+        st.divider()
+    else:
+        st.error("Team details not found in session state.")
+
 
 def start_team():
-    """Displays concurrent progress bars with different completion speeds."""
+    """Displays concurrent progress bars."""
     start_container = st.container(border=True)
     with start_container:
         st.write("Teamwork now in progress...")
-        
-        progress_1 = st.progress(0, text="Team Member 1 - Initializing...")
-        progress_2 = st.progress(0, text="Team Member 2 - Initializing...")
-        progress_3 = st.progress(0, text="Team Member 3 - Initializing...")
+        progress_bars = {
+            f"progress_{i}": st.progress(0, text=f"Team Member {i+1} - Initializing...")
+            for i in range(len(st.session_state.get("team_details", [])))
+        }
 
-        duration_1, duration_2, duration_3 = 2.0, 4.0, 3.0
-        time_step = 0.1
-        num_steps = int(max(duration_1, duration_2, duration_3) / time_step)
-
-        for i in range(num_steps + 1):
-            elapsed_time = i * time_step
-            p1 = min(100, int((elapsed_time / duration_1) * 100))
-            p2 = min(100, int((elapsed_time / duration_2) * 100))
-            p3 = min(100, int((elapsed_time / duration_3) * 100))
-            
-            progress_1.progress(p1, text="Team Member 1 - Operational")
-            progress_2.progress(p2, text="Team Member 2 - Operational")
-            progress_3.progress(p3, text="Team Member 3 - Operational")
-            
-            time.sleep(time_step)
+        # Simulate work
+        for percent_complete in range(100):
+            time.sleep(0.03)
+            for bar in progress_bars.values():
+                bar.progress(percent_complete + 1, text="Operational")
         
         time.sleep(0.5)
         success_message = st.success("Work Complete")
         time.sleep(2)
         success_message.empty()
-        time.sleep(1)
 
-    # Placeholder for displaying team output - currently inactive
-    # st.write("Team output will be displayed here.")
     st.button("View Documents")
 
 
 # --- Session State Initialization ---
-# Initialize chat history if it doesn't already exist.
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-
+if "team_details" not in st.session_state:
+    st.session_state.team_details = []
 
 # --- Display Chat History ---
-# Use a container with a fixed height to make the chat scrollable.
 chat_container = st.container(height=600, border=False)
 with chat_container:
-    # This loop is the single source of truth for what is displayed.
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
-            # Check for special content types to render custom UI components.
             if isinstance(message["content"], dict):
                 content_type = message["content"].get("type")
                 if content_type == "team_creation":
@@ -136,60 +134,75 @@ with chat_container:
                 elif content_type == "start_team":
                     start_team()
             else:
-                # Render regular text messages.
                 st.markdown(message["content"])
 
-
 # --- Handle New User Input ---
-if prompt := st.chat_input("Create a team or ask a question..."):
-    # 1. Add the user's message to the chat history.
+if prompt := st.chat_input("Describe the team you want to create..."):
     st.session_state.chat_history.append({"role": "user", "content": prompt})
 
-    # 2. Process the prompt and generate the assistant's response.
     with st.chat_message("assistant"):
-        # Handle the specific "create team" command.
-        if prompt.lower() == "create team":
-            with st.status("Creating Team...", expanded=True):
-                st.write("Analyzing requirements...")
-                time.sleep(2)
-                st.write("Assembling the optimal team...")
-                time.sleep(0.5)
-                success_message = st.success("Team Creation Complete")
-                time.sleep(2)
-                success_message.empty()
-            
-            # Add a special dictionary to history to trigger UI rendering on rerun.
-            st.session_state.chat_history.append({
-                "role": "assistant",
-                "content": {"type": "team_creation"}
-            })
-
-        # Handle the specific "start team" command.
-        elif prompt.lower() == "start team":
-            with st.status("Starting Team...", expanded=True):
+        # Handle "start team" command locally as it's a UI-only action
+        if prompt.lower() == "start team":
+            start_status = st.status("Starting Team...", expanded=True)
+            with start_status:
                 st.write("Initializing systems...")
                 time.sleep(1)
-                st.write("Running diagnostics...")
-                time.sleep(1)
-            
-            # Add a special dictionary to history.
             st.session_state.chat_history.append({
                 "role": "assistant",
                 "content": {"type": "start_team"}
             })
-
-        # Handle all other prompts by calling the OpenAI API.
+        
+        # For all other prompts, interact with the AI
         else:
             if not client:
-                st.warning("Please provide your OpenAI API key in the sidebar to continue.")
+                st.warning("Please provide your OpenAI API key.")
                 st.stop()
             
-            # Display the streaming response and capture the full text.
-            stream_generator = get_ai_response_stream(client, st.session_state.chat_history)
-            full_response = st.write_stream(stream_generator)
-            
-            # Add the complete assistant response to the history.
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response})
+            with st.spinner("Thinking..."):
+                try:
+                    # Prepare messages for the API, including the system prompt
+                    api_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + [
+                        {"role": msg["role"], "content": msg["content"]}
+                        for msg in st.session_state.chat_history
+                        if isinstance(msg["content"], str)
+                    ]
 
-    # 3. Rerun the script to display the new messages.
+                    # Call the OpenAI API with function calling enabled
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=api_messages,
+                        tools=tools,
+                        tool_choice="auto"
+                    )
+                    response_message = response.choices[0].message
+
+                    # Check if the model wants to call a function
+                    if response_message.tool_calls:
+                        tool_call = response_message.tool_calls[0]
+                        function_name = tool_call.function.name
+                        
+                        if function_name == "create_team":
+                            # It wants to create a team, so we execute the function
+                            function_args = json.loads(tool_call.function.arguments)
+                            function_response = create_team(
+                                team_members=function_args.get("team_members")
+                            )
+                            # Add a special message to history to render the tabs
+                            st.session_state.chat_history.append({
+                                "role": "assistant",
+                                "content": {"type": "team_creation"}
+                            })
+
+                    else:
+                        # It's a regular text response
+                        full_response = response_message.content
+                        st.session_state.chat_history.append({"role": "assistant", "content": full_response})
+
+                except openai.AuthenticationError:
+                    st.error("Authentication Error: Please check your OpenAI API key.")
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+
+    # Rerun the script to display the latest updates
     st.rerun()
+
