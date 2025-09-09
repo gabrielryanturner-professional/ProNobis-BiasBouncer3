@@ -68,9 +68,6 @@ def update_agent_details(index, name, role, description):
 # Schemas for the AI tools
 tools = [
     {
-        "type": "web_search"
-    },
-    {
         "type": "function",
         "function": {
             "name": "create_team",
