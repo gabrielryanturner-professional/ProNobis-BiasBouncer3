@@ -140,7 +140,8 @@ def render_edit_dialog():
     @st.dialog(f"{agent['name']}", width="large")
     def show_edit_dialog():
         """Defines and displays the content of the edit dialog."""
-        with st.sidebar:
+        col1, col2 = st.columns(2)
+        with col1:
             st.subheader("Edit Agent Details")
             
             # Manual editing fields with auto-saving
@@ -151,49 +152,50 @@ def render_edit_dialog():
             st.divider()
 
             st.subheader(f"Chat with {agent['name']}")
-
-        chat_container = st.container(height=250, border=True)
-        with chat_container:
-            
-            # Display agent-specific chat history
-            for message in st.session_state.agent_chat_histories.get(agent_index, []):
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-
-            # Agent-specific chat input
-            if agent_prompt := st.chat_input("Ask AI to make changes..."):
-                st.session_state.agent_chat_histories[agent_index].append({"role": "user", "content": agent_prompt})
+        
+        with col2:
+            chat_container = st.container(height=250, border=True)
+            with chat_container:
                 
-                # Construct the context for the editing AI
-                current_details = f"Current Agent Details:\nName: {agent['name']}\nRole: {agent['role']}\nDescription:\n{agent['description']}"
-                
-                edit_api_messages = [
-                    {"role": "system", "content": f"{EDIT_SYSTEM_PROMPT}\n\n{current_details}"}
-                ] + st.session_state.agent_chat_histories[agent_index]
+                # Display agent-specific chat history
+                for message in st.session_state.agent_chat_histories.get(agent_index, []):
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
 
-                try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=edit_api_messages,
-                        tools=tools,
-                        tool_choice="auto"
-                    )
-                    response_message = response.choices[0].message
+                # Agent-specific chat input
+                if agent_prompt := st.chat_input("Ask AI to make changes..."):
+                    st.session_state.agent_chat_histories[agent_index].append({"role": "user", "content": agent_prompt})
                     
-                    if response_message.tool_calls:
-                        tool_call = response_message.tool_calls[0]
-                        if tool_call.function.name == "update_agent_details":
-                            function_args = json.loads(tool_call.function.arguments)
-                            function_args['index'] = agent_index
-                            result = update_agent_details(**function_args)
-                            st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": result})
-                    else:
-                        st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": response_message.content})
+                    # Construct the context for the editing AI
+                    current_details = f"Current Agent Details:\nName: {agent['name']}\nRole: {agent['role']}\nDescription:\n{agent['description']}"
                     
-                    st.rerun()
+                    edit_api_messages = [
+                        {"role": "system", "content": f"{EDIT_SYSTEM_PROMPT}\n\n{current_details}"}
+                    ] + st.session_state.agent_chat_histories[agent_index]
 
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
+                    try:
+                        response = client.chat.completions.create(
+                            model="gpt-4o",
+                            messages=edit_api_messages,
+                            tools=tools,
+                            tool_choice="auto"
+                        )
+                        response_message = response.choices[0].message
+                        
+                        if response_message.tool_calls:
+                            tool_call = response_message.tool_calls[0]
+                            if tool_call.function.name == "update_agent_details":
+                                function_args = json.loads(tool_call.function.arguments)
+                                function_args['index'] = agent_index
+                                result = update_agent_details(**function_args)
+                                st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": result})
+                        else:
+                            st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": response_message.content})
+                        
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
 
         if st.button("Apply Changes & Close", type="primary"):
             del st.session_state.editing_agent_index
