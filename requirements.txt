@@ -1,3 +1,4 @@
 streamlit
 openai
 openai-agents
+duckduckgo-search
