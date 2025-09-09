@@ -150,7 +150,7 @@ def render_edit_dialog():
 
         st.subheader(f"Chat with {agent['name']}")
 
-        chat_container = st.container(height=300, border=True)
+        chat_container = st.container(height=250, border=True)
         with chat_container:
             
             # Display agent-specific chat history
