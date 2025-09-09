@@ -135,7 +135,7 @@ def create_team_tabs():
 
 agent_index = st.session_state.editing_agent_index if "editing_agent_index" in st.session_state else None
 agent = st.session_state.team_details[agent_index] if agent_index is not None else None
-@st.dialogue(f"Editing {agent['name']}")
+@st.dialog(f"Editing {agent['name']}")
 def render_edit_dialog():
     """Renders the m dialog for editing an agent."""
 
