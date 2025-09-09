@@ -192,7 +192,7 @@ def render_edit_dialog():
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
 
-        if st.button("Close"):
+        if st.button("Apply Changes & Close", type="primary"):
             del st.session_state.editing_agent_index
             st.rerun()
 
