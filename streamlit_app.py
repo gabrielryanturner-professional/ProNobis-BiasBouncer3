@@ -68,8 +68,7 @@ def update_agent_details(index, name, role, description):
 # Schemas for the AI tools
 tools = [
     {
-        "type": "web_search_preview",
-        "search_context_size": "medium"
+        "type": "web_search"
     },
     {
         "type": "function",
