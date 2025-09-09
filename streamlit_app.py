@@ -26,7 +26,7 @@ Do not just list the team members in text; you must use the provided tool to cre
 # New system prompt for the editing dialog
 EDIT_SYSTEM_PROMPT = """
 You are an AI assistant helping a user edit a specific team member.
-Your goal is to refine the agent's details based on the user's requests.
+Your goal is to refine the agent's details based on the user's requests; mention at the end of your response that you can edit details from the chat if necessary.
 When the user asks for a change, you MUST call the `update_agent_details` function with all the new details (name, role, and description).
 Do not just provide the updated text in your response; you must call the function to apply the changes.
 If you are just answering a question, you can respond with text as normal.
