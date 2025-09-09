@@ -137,19 +137,20 @@ def render_edit_dialog():
     agent_index = st.session_state.editing_agent_index
     agent = st.session_state.team_details[agent_index]
 
-    @st.dialog(f"{agent['name']}")
+    @st.dialog(f"{agent['name']}", width="large")
     def show_edit_dialog():
         """Defines and displays the content of the edit dialog."""
-        st.subheader("Edit Agent Details")
-        
-        # Manual editing fields with auto-saving
-        st.text_input("Name", value=agent["name"], key=f"edit_{agent_index}_name", on_change=handle_agent_detail_change, args=(agent_index, "name"))
-        st.text_input("Role", value=agent["role"], key=f"edit_{agent_index}_role", on_change=handle_agent_detail_change, args=(agent_index, "role"))
-        st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=100, on_change=handle_agent_detail_change, args=(agent_index, "description"))
-        
-        st.divider()
+        with st.sidebar():
+            st.subheader("Edit Agent Details")
+            
+            # Manual editing fields with auto-saving
+            st.text_input("Name", value=agent["name"], key=f"edit_{agent_index}_name", on_change=handle_agent_detail_change, args=(agent_index, "name"))
+            st.text_input("Role", value=agent["role"], key=f"edit_{agent_index}_role", on_change=handle_agent_detail_change, args=(agent_index, "role"))
+            st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=100, on_change=handle_agent_detail_change, args=(agent_index, "description"))
+            
+            st.divider()
 
-        st.subheader(f"Chat with {agent['name']}")
+            st.subheader(f"Chat with {agent['name']}")
 
         chat_container = st.container(height=250, border=True)
         with chat_container:
