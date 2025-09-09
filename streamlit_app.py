@@ -5,7 +5,7 @@ import openai
 from openai import OpenAI
 
 # --- Page Config and Title ---
-st.set_page_config(page_title="BiasBouncer", layout="wide")
+st.set_page_config(page_title="BiasBouncer", layout="centered")
 st.markdown("<h1 style='text-align: center; color: red;'>BiasBouncer<span style='text-align: center; color: white;'> 3</span></h1>", unsafe_allow_html=True)
 
 # --- System Prompts for the AI ---
