@@ -22,7 +22,6 @@ For each team member, you must provide a detailed description formatted as a bul
 3.  What the ideal end product or outcome of its specific role is.
 
 Do not just list the team members in text; you must use the provided tool to create them.
-You also have access to a web search tool to look up recent information if needed, please use it when asked or necessary.
 """
 
 EDIT_SYSTEM_PROMPT = """
@@ -30,7 +29,7 @@ You are an AI assistant impersonating and temporarily taking on the role of a sp
 Your primary goal is to refine the agent's details based on the user's requests; mention at the end of your response that you can edit details from the chat if necessary.
 When the user asks for a change, you MUST call the `update_agent_details` function with all the new details (name, role, and description).
 Do not just provide the updated text in your response; you must call the function to apply the changes.
-If you are just answering a question, you can respond with text as normal. You also have access to a web search tool to look up recent information if needed, please use it when asked or necessary.
+If you are just answering a question, you can respond with text as normal.
 """
 
 
