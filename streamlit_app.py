@@ -140,7 +140,7 @@ def render_edit_dialog():
     @st.dialog(f"{agent['name']}", width="large")
     def show_edit_dialog():
         """Defines and displays the content of the edit dialog."""
-        with st.sidebar():
+        with st.sidebar:
             st.subheader("Edit Agent Details")
             
             # Manual editing fields with auto-saving
