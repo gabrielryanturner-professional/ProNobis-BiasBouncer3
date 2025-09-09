@@ -1,12 +1,13 @@
 # orchestrator.py
 from openai import OpenAI
 import streamlit as st
-from agents import Agent, Chat, stream, tool
-from typing import List
+from agents import Agent, tool, AgentHooks # CORRECTED: AgentHooks is the proper way to observe runs
+from typing import List, Any
+import json
 
 print("Loading Orchestrator...")
 
-# System prompt for our manager agent
+# System prompt for our manager agent (No changes here)
 MANAGER_SYSTEM_PROMPT = """
 You are the Project Manager, a master AI agent responsible for coordinating a team of specialist agents.
 Your primary goal is to achieve the user's objective by breaking it down into logical sub-tasks
@@ -30,12 +31,10 @@ You must exclusively use your team members (the provided tools) to accomplish th
 to answer directly without delegating.
 """
 
+# create_team_description function (No changes here)
 def create_team_description(team: List[Agent]) -> str:
-    """Creates a formatted string describing the team for the manager's prompt."""
     description = ""
     for agent in team:
-        # We access the original role from the agent's instructions.
-        # This is a bit of a hack, but effective.
         try:
             role = agent.instructions.split("Your designated role is: ")[1].split("\n")[0]
         except IndexError:
@@ -43,18 +42,15 @@ def create_team_description(team: List[Agent]) -> str:
         description += f"- **{agent.name}**: {role}\n"
     return description
 
+# create_project_manager function (Keeping your updated model choice)
 def create_project_manager(client: OpenAI, team: List[Agent]) -> Agent:
-    """Creates and configures the Project Manager agent."""
     print("Creating Project Manager...")
     
     team_desc = create_team_description(team)
     manager_instructions = MANAGER_SYSTEM_PROMPT.format(team_description=team_desc)
 
-    # Convert the specialist agents into tools for the manager
     manager_tools = []
     for agent in team:
-        # The tool's name is the agent's name, and its description is its role.
-        # This gives the manager context on who to call for what task.
         try:
             role_description = agent.instructions.split("Your designated role is: ")[1].split("\n\n")[0]
         except IndexError:
@@ -66,7 +62,7 @@ def create_project_manager(client: OpenAI, team: List[Agent]) -> Agent:
 
     manager = Agent(
         client=client,
-        model="gpt-4o",
+        model="gpt-4o", # Using your preferred model
         name="ProjectManager",
         instructions=manager_instructions,
         tools=manager_tools,
@@ -75,37 +71,54 @@ def create_project_manager(client: OpenAI, team: List[Agent]) -> Agent:
     return manager
 
 
+# --- NEW AND CORRECTED SECTION ---
+
+# We define a custom hooks class to stream updates to the Streamlit UI.
+class MissionLogHooks(AgentHooks):
+    def __init__(self, container):
+        super().__init__()
+        self.container = container
+
+    def on_tool_start(self, tool_name: str, args: dict, **kwargs) -> None:
+        """Called when the manager is about to call a worker agent."""
+        with self.container:
+            st.info(f"MANAGER: Delegating task to **{tool_name}** with args: `{json.dumps(args)}`")
+
+    def on_tool_end(self, tool_name: str, output: Any, **kwargs) -> None:
+        """Called after a worker agent finishes its task."""
+        with self.container:
+            with st.expander(f"Output from **{tool_name}**", expanded=False):
+                # The output from another agent is also an AgentOutput object
+                if hasattr(output, 'content') and output.content:
+                     st.markdown(output.content[0].text.value)
+                else:
+                     st.text(str(output))
+
 def run_team(manager: Agent, goal: str, chat_container):
     """
-    Runs the multi-agent team to accomplish a given goal and streams the output.
+    Runs the multi-agent team to accomplish a given goal using AgentHooks for live updates.
     """
     print(f"Executing goal: {goal}")
 
-    # We use the Chat object for a persistent conversation
-    chat = Chat()
-    chat.add_user_message(goal)
+    # 1. Instantiate our custom hooks to connect the run to our UI
+    hooks = MissionLogHooks(chat_container)
 
-    # Stream the response to get real-time updates
-    with chat_container:
-        with st.chat_message("assistant"):
-            full_response = ""
-            placeholder = st.empty()
-            try:
-                for event in stream(manager, chat):
-                    if event.event == "thread.run.step.requires_action":
-                        tool_call = event.data.required_action.submit_tool_outputs.tool_calls[0]
-                        tool_name = tool_call.function.name
-                        tool_args = tool_call.function.arguments
-                        st.info(f"MANAGER: Delegating task to **{tool_name}** with args: `{tool_args}`")
+    # 2. Use the agent's .run() method, which is the correct way to execute it.
+    # The hooks will be called at each step of the lifecycle.
+    final_response = None
+    try:
+        # The .run() method blocks until the entire execution is complete.
+        output = manager.run(input=goal, hooks=[hooks])
+        
+        # The final, synthesized response is in the output object
+        if output.content:
+            final_response = output.content[0].text.value
+            with chat_container:
+                st.success("Manager has synthesized the final response:")
+                st.markdown(final_response)
 
-                    elif event.event == "thread.message.delta":
-                        full_response += event.data.delta.content[0].text.value
-                        placeholder.markdown(full_response + "▌")
+    except Exception as e:
+        st.error(f"An error occurred during execution: {e}")
+        print(f"ERROR: {e}")
 
-                placeholder.markdown(full_response)
-
-            except Exception as e:
-                st.error(f"An error occurred during execution: {e}")
-                print(f"ERROR: {e}")
-
-    return full_response
+    return final_response
