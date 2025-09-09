@@ -15,8 +15,6 @@ Your primary goal is to help users build a diversified team of AI agents to acco
 When a user wants to create a team, you must guide them. Ask clarifying questions to understand their goal.
 Once you have enough information, you MUST call the `create_team` function to generate the team members.
 
-After a team has been created, the user might ask to "start the team" or "begin work". When they do, you MUST call the `start_team` function.
-
 For each team member, you must provide a detailed description formatted as a bulleted list (using markdown like `- Point 1`). This description must cover at least three points:
 1.  A more detailed explanation of its role and core responsibilities.
 2.  How it will go about accomplishing its tasks (its methodology or process).
@@ -25,6 +23,7 @@ For each team member, you must provide a detailed description formatted as a bul
 Do not just list the team members in text; you must use the provided tool to create them.
 """
 
+# New system prompt for the editing dialog
 EDIT_SYSTEM_PROMPT = """
 You are an AI assistant helping a user edit a specific team member.
 Your goal is to refine the agent's details based on the user's requests.
@@ -64,11 +63,6 @@ def update_agent_details(index, name, role, description):
         st.session_state.team_details[index] = {"name": name, "role": role, "description": description}
         return "Agent details updated successfully."
     return "Error: Invalid agent index."
-
-def start_team():
-    """Sets a flag to indicate the team has started working."""
-    st.session_state.team_started = True
-    return "Team is now operational and beginning their work."
 
 # Schemas for the AI tools
 tools = [
@@ -111,14 +105,6 @@ tools = [
                 }, "required": ["index", "name", "role", "description"]
             }
         }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "start_team",
-            "description": "Initializes the created team of agents to start their assigned tasks.",
-            "parameters": {"type": "object", "properties": {}}
-        }
     }
 ]
 
@@ -145,82 +131,87 @@ def create_team_tabs():
                     st.rerun()
         st.divider()
 
-def render_team_progress():
-    """Displays three concurrent progress bars to simulate team activity."""
-    start_container = st.container(border=True)
-    with start_container:
-        st.write("Teamwork now in progress...")
-        
-        progress_bars = []
-        team_size = len(st.session_state.get("team_details", []))
-        for i in range(team_size):
-            member_name = st.session_state.team_details[i]['name']
-            progress_bars.append(st.progress(0, text=f"{member_name} - Initializing..."))
-
-        durations = [2.0, 4.0, 3.0] * (team_size // 3) + [2.0, 4.0, 3.0][:team_size % 3]
-
-        time_step = 0.05
-        max_duration = max(durations) if durations else 0
-        num_steps = int(max_duration / time_step)
-
-        for i in range(num_steps + 1):
-            elapsed_time = i * time_step
-            for idx, bar in enumerate(progress_bars):
-                member_name = st.session_state.team_details[idx]['name']
-                percent = min(100, int((elapsed_time / durations[idx]) * 100))
-                status = "Operational" if percent == 100 else "Working..."
-                bar.progress(percent, text=f"{member_name} - {status}")
-            time.sleep(time_step)
-        
-        time.sleep(0.5)
-        st.success("Work Complete")
-
 def render_edit_dialog():
-    """Renders the dialog for editing an agent."""
+    """Renders the dialog for editing an agent by defining and then calling a decorated function."""
     agent_index = st.session_state.editing_agent_index
     agent = st.session_state.team_details[agent_index]
+
     @st.dialog(f"Editing {agent['name']}")
     def show_edit_dialog():
+        """Defines and displays the content of the edit dialog."""
         st.subheader("Edit Agent Details")
+        
+        # Manual editing fields with auto-saving
         st.text_input("Name", value=agent["name"], key=f"edit_{agent_index}_name", on_change=handle_agent_detail_change, args=(agent_index, "name"))
         st.text_input("Role", value=agent["role"], key=f"edit_{agent_index}_role", on_change=handle_agent_detail_change, args=(agent_index, "role"))
-        st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=250, on_change=handle_agent_detail_change, args=(agent_index, "description"))
+        st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=100, on_change=handle_agent_detail_change, args=(agent_index, "description"))
+        
         st.divider()
-        st.subheader("AI-Assisted Editing")
-        for message in st.session_state.agent_chat_histories.get(agent_index, []):
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-        if agent_prompt := st.chat_input("Ask AI to make changes..."):
-            st.session_state.agent_chat_histories[agent_index].append({"role": "user", "content": agent_prompt})
-            current_details = f"Current Agent Details:\nName: {agent['name']}\nRole: {agent['role']}\nDescription:\n{agent['description']}"
-            edit_api_messages = [{"role": "system", "content": f"{EDIT_SYSTEM_PROMPT}\n\n{current_details}"}] + st.session_state.agent_chat_histories[agent_index]
-            try:
-                response = client.chat.completions.create(model="gpt-4o", messages=edit_api_messages, tools=tools, tool_choice="auto")
-                response_message = response.choices[0].message
-                if response_message.tool_calls:
-                    tool_call = response_message.tool_calls[0]
-                    if tool_call.function.name == "update_agent_details":
-                        function_args = json.loads(tool_call.function.arguments)
-                        function_args['index'] = agent_index
-                        result = update_agent_details(**function_args)
-                        st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": result})
-                else:
-                    st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": response_message.content})
-                st.rerun()
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-        if st.button("Close"):
+
+        chat_container = st.container(height=300, border=True)
+        with chat_container:
+            st.subheader("AI-Assisted Editing")
+            
+            # Display agent-specific chat history
+            for message in st.session_state.agent_chat_histories.get(agent_index, []):
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            # Agent-specific chat input
+            if agent_prompt := st.chat_input("Ask AI to make changes..."):
+                st.session_state.agent_chat_histories[agent_index].append({"role": "user", "content": agent_prompt})
+                
+                # Construct the context for the editing AI
+                current_details = f"Current Agent Details:\nName: {agent['name']}\nRole: {agent['role']}\nDescription:\n{agent['description']}"
+                
+                edit_api_messages = [
+                    {"role": "system", "content": f"{EDIT_SYSTEM_PROMPT}\n\n{current_details}"}
+                ] + st.session_state.agent_chat_histories[agent_index]
+
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=edit_api_messages,
+                        tools=tools,
+                        tool_choice="auto"
+                    )
+                    response_message = response.choices[0].message
+                    
+                    if response_message.tool_calls:
+                        tool_call = response_message.tool_calls[0]
+                        if tool_call.function.name == "update_agent_details":
+                            function_args = json.loads(tool_call.function.arguments)
+                            function_args['index'] = agent_index
+                            result = update_agent_details(**function_args)
+                            st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": result})
+                    else:
+                        st.session_state.agent_chat_histories[agent_index].append({"role": "assistant", "content": response_message.content})
+                    
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+
+        if st.button("Apply Changes & Close", type="primary"):
             del st.session_state.editing_agent_index
             st.rerun()
+
+    # Call the decorated function to actually display the dialog
     show_edit_dialog()
 
+
 # --- Session State Initialization ---
-if "chat_history" not in st.session_state: st.session_state.chat_history = []
-if "team_details" not in st.session_state: st.session_state.team_details = []
-if "agent_chat_histories" not in st.session_state: st.session_state.agent_chat_histories = {}
-if "team_started" not in st.session_state: st.session_state.team_started = False
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "team_details" not in st.session_state:
+    st.session_state.team_details = []
+if "agent_chat_histories" not in st.session_state:
+    st.session_state.agent_chat_histories = {}
+
 
 # --- Main App Logic ---
+
+# Display the main chat history
 chat_container = st.container(height=600, border=False)
 with chat_container:
     for message in st.session_state.chat_history:
@@ -229,50 +220,55 @@ with chat_container:
                 content_type = message["content"].get("type")
                 if content_type == "team_creation":
                     create_team_tabs()
-                elif content_type == "start_team":
-                    render_team_progress()
             else:
                 st.markdown(message["content"])
 
+# If we are in editing mode, display the dialog
 if "editing_agent_index" in st.session_state:
     render_edit_dialog()
 
+# Handle new user input in the main chat
 if prompt := st.chat_input("Describe the team you want to create..."):
     st.session_state.chat_history.append({"role": "user", "content": prompt})
+    
     with st.chat_message("assistant"):
         if not client:
             st.warning("Please provide your OpenAI API key.")
             st.stop()
+        
         with st.spinner("Thinking..."):
             try:
                 api_messages = [{"role": "system", "content": MAIN_SYSTEM_PROMPT}] + [
                     {"role": msg["role"], "content": msg["content"]}
                     for msg in st.session_state.chat_history if isinstance(msg["content"], str)
                 ]
-                response = client.chat.completions.create(model="gpt-4o", messages=api_messages, tools=tools, tool_choice="auto")
+
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=api_messages,
+                    tools=tools,
+                    tool_choice="auto"
+                )
                 response_message = response.choices[0].message
+
                 if response_message.tool_calls:
                     tool_call = response_message.tool_calls[0]
-                    function_name = tool_call.function.name
-                    function_args = json.loads(tool_call.function.arguments)
-                    
-                    if function_name == "create_team":
+                    if tool_call.function.name == "create_team":
+                        function_args = json.loads(tool_call.function.arguments)
                         create_team(**function_args)
+                        
                         num_members = len(function_args.get("team_members", []))
                         st.session_state.agent_chat_histories = {i: [] for i in range(num_members)}
-                        st.session_state.chat_history.append({"role": "assistant", "content": {"type": "team_creation"}})
-                    
-                    elif function_name == "start_team":
-                        assistant_message = start_team()
-                        st.session_state.chat_history.append({"role": "assistant", "content": assistant_message})
-                        st.session_state.chat_history.append({"role": "assistant", "content": {"type": "start_team"}})
 
+                        st.session_state.chat_history.append({"role": "assistant", "content": {"type": "team_creation"}})
                 else:
                     full_response = response_message.content
                     st.session_state.chat_history.append({"role": "assistant", "content": full_response})
+
             except openai.AuthenticationError:
                 st.error("Authentication Error: Please check your OpenAI API key.")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
+
     st.rerun()
 
