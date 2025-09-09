@@ -230,10 +230,8 @@ if "editing_agent_index" in st.session_state:
     render_edit_dialog()
 
 # Handle new user input in the main chat
-message_max = st.container(height=300, border=False)
 if prompt := st.chat_input("Describe the team you want to create...", accept_file=True):
-    with message_max:
-        st.session_state.chat_history.append({"role": "user", "content": prompt})
+    st.session_state.chat_history.append({"role": "user", "content": prompt})
     
     with st.chat_message("assistant"):
         if not client:
