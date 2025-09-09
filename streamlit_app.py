@@ -147,7 +147,7 @@ def render_edit_dialog():
             # Manual editing fields with auto-saving
             st.text_input("Name", value=agent["name"], key=f"edit_{agent_index}_name", on_change=handle_agent_detail_change, args=(agent_index, "name"))
             st.text_input("Role", value=agent["role"], key=f"edit_{agent_index}_role", on_change=handle_agent_detail_change, args=(agent_index, "role"))
-            st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=225, on_change=handle_agent_detail_change, args=(agent_index, "description"))
+            st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=230, on_change=handle_agent_detail_change, args=(agent_index, "description"))
         
         with col2:
             st.subheader(f"Chat with {agent['name']}")
