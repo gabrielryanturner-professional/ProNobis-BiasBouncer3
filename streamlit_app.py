@@ -230,7 +230,7 @@ if "editing_agent_index" in st.session_state:
     render_edit_dialog()
 
 # Handle new user input in the main chat
-if prompt := st.chat_input("Describe the team you want to create...", accept_files=True):
+if prompt := st.chat_input("Describe the team you want to create..."):
     st.session_state.chat_history.append({"role": "user", "content": prompt})
     
     with st.chat_message("assistant"):
