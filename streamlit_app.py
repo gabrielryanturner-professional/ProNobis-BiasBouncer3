@@ -140,7 +140,7 @@ def render_edit_dialog():
     @st.dialog(f"{agent['name']}", width="large")
     def show_edit_dialog():
         """Defines and displays the content of the edit dialog."""
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1,2])
         with col1:
             st.subheader("Edit Agent Details")
             
