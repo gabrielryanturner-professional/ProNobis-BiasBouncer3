@@ -135,7 +135,7 @@ def create_team_tabs():
 
 agent_index = st.session_state.editing_agent_index
 agent = st.session_state.team_details[agent_index]
-@st.modal(f"Editing {agent['name']}")
+@st.dialogue(f"Editing {agent['name']}")
 def render_edit_dialog():
     """Renders the m dialog for editing an agent."""
 
