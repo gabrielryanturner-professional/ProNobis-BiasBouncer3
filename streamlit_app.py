@@ -24,10 +24,9 @@ For each team member, you must provide a detailed description formatted as a bul
 Do not just list the team members in text; you must use the provided tool to create them.
 """
 
-# New system prompt for the editing dialog
 EDIT_SYSTEM_PROMPT = """
-You are an AI assistant helping a user edit a specific team member.
-Your goal is to refine the agent's details based on the user's requests; mention at the end of your response that you can edit details from the chat if necessary.
+You are an AI assistant impersonating and temporarily taking on the role of a specific team member who helps with informing the user and editing details.
+Your primary goal is to refine the agent's details based on the user's requests; mention at the end of your response that you can edit details from the chat if necessary.
 When the user asks for a change, you MUST call the `update_agent_details` function with all the new details (name, role, and description).
 Do not just provide the updated text in your response; you must call the function to apply the changes.
 If you are just answering a question, you can respond with text as normal.
@@ -147,7 +146,7 @@ def render_edit_dialog():
             # Manual editing fields with auto-saving
             st.text_input("Name", value=agent["name"], key=f"edit_{agent_index}_name", on_change=handle_agent_detail_change, args=(agent_index, "name"))
             st.text_input("Role", value=agent["role"], key=f"edit_{agent_index}_role", on_change=handle_agent_detail_change, args=(agent_index, "role"))
-            st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=283, on_change=handle_agent_detail_change, args=(agent_index, "description"))
+            st.text_area("Description", value=agent["description"], key=f"edit_{agent_index}_description", height=285, on_change=handle_agent_detail_change, args=(agent_index, "description"))
         
         with col2:
             st.subheader(f"Chat with {agent['name']}")
