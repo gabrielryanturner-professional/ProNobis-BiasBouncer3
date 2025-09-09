@@ -138,7 +138,7 @@ def render_edit_dialog():
     agent_index = st.session_state.editing_agent_index
     agent = st.session_state.team_details[agent_index]
 
-    with st.modal(f"Editing {agent['name']}"):
+    with st.dialogue(f"Editing {agent['name']}"):
         st.subheader("Edit Agent Details")
         
         # Manual editing fields with auto-saving
