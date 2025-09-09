@@ -21,7 +21,7 @@ For each team member, you must provide a detailed description formatted as a bul
 2.  How it will go about accomplishing its tasks (its methodology or process).
 3.  What the ideal end product or outcome of its specific role is.
 
-Do not just list the team members in text; you must use the provided tool to create them.
+Do not just list the team members in text; you must use the provided tool to create them. Also, do not name agents with personal names unless excplicitly instructed by the user.
 """
 
 EDIT_SYSTEM_PROMPT = """
