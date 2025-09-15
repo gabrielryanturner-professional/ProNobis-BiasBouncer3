@@ -97,18 +97,17 @@ def create_single_agent(name, role, description):
     # Combine role and description into comprehensive instructions
     instructions = f"""You are {name}, a specialist AI agent with the role of {role}.
 
-        Your core responsibilities and approach:
-        {description}
+Your core responsibilities and approach:
+{description}
 
-        You should:
-        1. Focus on your specific area of expertise as defined by your role
-        2. Provide detailed, actionable insights and recommendations
-        3. Collaborate effectively with other team members when needed
-        4. Use web research tools when necessary to gather current information
-        5. Maintain a professional and helpful demeanor while fulfilling your responsibilities
+You should:
+1. Focus on your specific area of expertise as defined by your role
+2. Provide detailed, actionable insights and recommendations
+3. Collaborate effectively with other team members when needed
+4. Use web research tools when necessary to gather current information
+5. Maintain a professional and helpful demeanor while fulfilling your responsibilities
 
-        Remember to stay within your defined role and expertise area while being thorough and comprehensive in your approach.
-        """
+Remember to stay within your defined role and expertise area while being thorough and comprehensive in your approach."""
     
     # Create agent object (or dict representation if SDK not available)
     if AGENTS_SDK_AVAILABLE:
@@ -365,10 +364,6 @@ with chat_container:
                 content_type = message["content"].get("type")
                 if content_type == "team_creation":
                     create_team_tabs()
-                elif content_type == "agent_creation":
-                    st.success("Agent(s) created successfully!")
-                else:
-                    st.markdown(message["content"])
             else:
                 st.markdown(message["content"])
 
@@ -408,13 +403,16 @@ if prompt := st.chat_input("Describe the team you want to create..."):
                             
                             num_members = len(function_args.get("team_members", []))
                             st.session_state.agent_chat_histories = {i: [] for i in range(num_members)}
-                                    
+
                             st.session_state.chat_history.append({"role": "assistant", "content": {"type": "team_creation"}})
-                        
-                        # Removed automatic call to create_agents; agent creation will now occur only when user indicates satisfaction
-                        # elif tool_call.function.name == "create_agents":
-                        #     agents_result = create_agents()
-                        #     st.success(agents_result)
+                            
+                            # Automatically create agents after team creation
+                            agents_result = create_agents()
+                            st.success(agents_result)
+                            
+                        elif tool_call.function.name == "create_agents":
+                            agents_result = create_agents()
+                            st.success(agents_result)
                 else:
                     full_response = response_message.content
                     st.session_state.chat_history.append({"role": "assistant", "content": full_response})
