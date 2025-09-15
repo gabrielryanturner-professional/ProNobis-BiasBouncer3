@@ -2,6 +2,13 @@ import streamlit as st
 import json
 import openai
 from openai import OpenAI
+import asyncio
+try:
+    from agents import Agent, Runner
+    AGENTS_SDK_AVAILABLE = True
+except ImportError:
+    AGENTS_SDK_AVAILABLE = False
+    st.warning("OpenAI Agents SDK not installed. Run: pip install openai-agents")
 
 # --- Page Config and Title ---
 st.set_page_config(page_title="BiasBouncer", layout="centered")
@@ -21,6 +28,8 @@ For each team member, you must provide a detailed description formatted as a bul
 3.  What the ideal end product or outcome of its specific role is.
 
 Do not just list the team members in text; you must use the provided tool to create them. Also, do not name agents with personal names unless excplicitly instructed by the user.
+
+After creating the team, you should also call the `create_agents` function to instantiate the actual AI agents based on the team details.
 """
 
 EDIT_SYSTEM_PROMPT = """
@@ -43,6 +52,19 @@ with st.sidebar:
     if st.button("Clear Chat History & Team"):
         st.session_state.clear()
         st.rerun()
+    
+    # Display agent creation status
+    if "agents_created" in st.session_state and st.session_state.agents_created:
+        st.success(f"✅ {len(st.session_state.agent_objects)} agents created")
+        if st.button("View Agent Details"):
+            st.session_state.show_agent_details = not st.session_state.get("show_agent_details", False)
+        
+        if st.session_state.get("show_agent_details", False):
+            for idx, agent in enumerate(st.session_state.agent_objects):
+                with st.expander(f"Agent {idx+1}: {agent['name']}"):
+                    st.write(f"**Role:** {agent['role']}")
+                    st.write("**Instructions:**")
+                    st.code(agent['instructions'], language='text')
 
 # Cache the OpenAI client in session state to avoid recreating it on every rerun
 if openai_api_key:
@@ -57,14 +79,103 @@ client = st.session_state.get("client")
 def create_team(team_members):
     """Stores the generated team member details in the session state."""
     st.session_state.team_details = team_members
+    st.session_state.agents_created = False  # Reset agent creation status
     return f"Successfully created a team with {len(team_members)} members."
 
 def update_agent_details(index, name, role, description):
     """Updates the details of a specific agent in the session state."""
     if 0 <= index < len(st.session_state.team_details):
         st.session_state.team_details[index] = {"name": name, "role": role, "description": description}
+        # If agents were already created, update the corresponding agent object
+        if "agent_objects" in st.session_state and st.session_state.agents_created:
+            st.session_state.agent_objects[index] = create_single_agent(name, role, description)
         return "Agent details updated successfully."
     return "Error: Invalid agent index."
+
+def create_single_agent(name, role, description):
+    """Helper function to create a single agent object with instructions based on team details."""
+    # Combine role and description into comprehensive instructions
+    instructions = f"""You are {name}, a specialist AI agent with the role of {role}.
+
+Your core responsibilities and approach:
+{description}
+
+You should:
+1. Focus on your specific area of expertise as defined by your role
+2. Provide detailed, actionable insights and recommendations
+3. Collaborate effectively with other team members when needed
+4. Use web research tools when necessary to gather current information
+5. Maintain a professional and helpful demeanor while fulfilling your responsibilities
+
+Remember to stay within your defined role and expertise area while being thorough and comprehensive in your approach."""
+    
+    # Create agent object (or dict representation if SDK not available)
+    if AGENTS_SDK_AVAILABLE:
+        try:
+            agent = Agent(
+                name=name,
+                instructions=instructions,
+                handoff_description=f"Specialist agent for {role}",
+                # Tools will be added here when web research tool is configured
+                # tools=[web_research_tool] 
+            )
+            return {
+                "name": name,
+                "role": role,
+                "instructions": instructions,
+                "agent_object": agent,
+                "sdk_created": True
+            }
+        except Exception as e:
+            st.warning(f"Could not create SDK agent for {name}: {str(e)}")
+            return {
+                "name": name,
+                "role": role,
+                "instructions": instructions,
+                "agent_object": None,
+                "sdk_created": False
+            }
+    else:
+        return {
+            "name": name,
+            "role": role,
+            "instructions": instructions,
+            "agent_object": None,
+            "sdk_created": False
+        }
+
+def create_agents():
+    """Creates actual AI agents based on the team details in session state."""
+    if "team_details" not in st.session_state or not st.session_state.team_details:
+        return "Error: No team details found. Please create a team first."
+    
+    agent_objects = []
+    for member in st.session_state.team_details:
+        agent_obj = create_single_agent(
+            member["name"],
+            member["role"],
+            member["description"]
+        )
+        agent_objects.append(agent_obj)
+    
+    st.session_state.agent_objects = agent_objects
+    st.session_state.agents_created = True
+    
+    # Create a manager agent if SDK is available
+    if AGENTS_SDK_AVAILABLE and any(a["sdk_created"] for a in agent_objects):
+        try:
+            sdk_agents = [a["agent_object"] for a in agent_objects if a["sdk_created"]]
+            manager_agent = Agent(
+                name="Team Manager",
+                instructions="You coordinate the team of specialist agents and determine which agent should handle each task based on their expertise.",
+                handoffs=sdk_agents
+            )
+            st.session_state.manager_agent = manager_agent
+            return f"Successfully created {len(agent_objects)} AI agents with a Team Manager for coordination."
+        except Exception as e:
+            return f"Created {len(agent_objects)} agent configurations. Manager creation failed: {str(e)}"
+    
+    return f"Successfully created {len(agent_objects)} agent configurations (SDK agents will be created when the Agents SDK is properly installed)."
 
 # Schemas for the AI tools
 tools = [
@@ -108,6 +219,18 @@ tools = [
                 }, "required": ["index", "name", "role", "description"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_agents",
+            "description": "Creates actual AI agent objects based on the team details that have been defined.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
+        }
     }
 ]
 
@@ -129,11 +252,21 @@ def create_team_tabs():
                 st.markdown(f"**Role:** {member['role']}")
                 st.markdown("**Description:**")
                 st.markdown(member["description"])
+                
+                # Show agent status if agents have been created
+                if "agent_objects" in st.session_state and st.session_state.agents_created:
+                    agent_obj = st.session_state.agent_objects[i]
+                    if agent_obj["sdk_created"]:
+                        st.success("✅ Agent created with SDK")
+                    else:
+                        st.info("📋 Agent configuration ready")
+                
                 if st.button("Edit Agent", key=f"edit_btn_{i}"):
                     st.session_state.editing_agent_index = i
                     st.rerun()
         st.divider()
-        st.write(st.session_state.team_details[0].get("epilogue", ""))
+        if len(team_members) > 0 and "epilogue" in team_members[0]:
+            st.write(team_members[0].get("epilogue", ""))
 
 def render_edit_dialog():
     """Renders the dialog for editing an agent by defining and then calling a decorated function."""
@@ -177,7 +310,7 @@ def render_edit_dialog():
                     response = client.chat.completions.create(
                         model="gpt-4o",
                         messages=edit_api_messages,
-                        tools=tools,
+                        tools=tools[0:2],  # Only use update_agent_details tool for editing
                         tool_choice="auto"
                     )
                     response_message = response.choices[0].message
@@ -212,6 +345,8 @@ if "team_details" not in st.session_state:
     st.session_state.team_details = []
 if "agent_chat_histories" not in st.session_state:
     st.session_state.agent_chat_histories = {}
+if "agents_created" not in st.session_state:
+    st.session_state.agents_created = False
 
 
 # --- Main App Logic ---
@@ -257,15 +392,23 @@ if prompt := st.chat_input("Describe the team you want to create..."):
                 response_message = response.choices[0].message
 
                 if response_message.tool_calls:
-                    tool_call = response_message.tool_calls[0]
-                    if tool_call.function.name == "create_team":
-                        function_args = json.loads(tool_call.function.arguments)
-                        create_team(**function_args)
-                        
-                        num_members = len(function_args.get("team_members", []))
-                        st.session_state.agent_chat_histories = {i: [] for i in range(num_members)}
+                    for tool_call in response_message.tool_calls:
+                        if tool_call.function.name == "create_team":
+                            function_args = json.loads(tool_call.function.arguments)
+                            result = create_team(**function_args)
+                            
+                            num_members = len(function_args.get("team_members", []))
+                            st.session_state.agent_chat_histories = {i: [] for i in range(num_members)}
 
-                        st.session_state.chat_history.append({"role": "assistant", "content": {"type": "team_creation"}})
+                            st.session_state.chat_history.append({"role": "assistant", "content": {"type": "team_creation"}})
+                            
+                            # Automatically create agents after team creation
+                            agents_result = create_agents()
+                            st.success(agents_result)
+                            
+                        elif tool_call.function.name == "create_agents":
+                            agents_result = create_agents()
+                            st.success(agents_result)
                 else:
                     full_response = response_message.content
                     st.session_state.chat_history.append({"role": "assistant", "content": full_response})
