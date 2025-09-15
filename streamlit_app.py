@@ -83,7 +83,7 @@ tools = [
                                 "name": {"type": "string", "description": "The name of the team member."},
                                 "role": {"type": "string", "description": "The specific role or job title of the member."},
                                 "description": {"type": "string", "description": "A detailed, multi-point description formatted as a markdown bulleted list."},
-                                "epilogue": {"type": "string", "description": "A brief description of the team that has been created and intended team dynamics."}
+                                "epilogue": {"type": "string", "description": "A brief 2-3 sentence description of the team that has been created, with team names and roles specified along with their intended team dynamics."}
                             }, "required": ["name", "role", "description", "epilogue"]
                         }
                     }
