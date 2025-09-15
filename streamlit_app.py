@@ -1,5 +1,4 @@
 import streamlit as st
-import time
 import json
 import openai
 from openai import OpenAI
@@ -45,11 +44,14 @@ with st.sidebar:
         st.session_state.clear()
         st.rerun()
 
-client = None
+# Cache the OpenAI client in session state to avoid recreating it on every rerun
 if openai_api_key:
-    client = OpenAI(api_key=openai_api_key)
+    if "client" not in st.session_state:
+        st.session_state.client = OpenAI(api_key=openai_api_key)
 else:
     st.info("Please enter your OpenAI API key in the sidebar to start.")
+
+client = st.session_state.get("client")
 
 # --- Tool & Function Definitions ---
 def create_team(team_members):
