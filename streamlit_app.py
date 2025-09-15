@@ -83,8 +83,9 @@ tools = [
                             "properties": {
                                 "name": {"type": "string", "description": "The name of the team member."},
                                 "role": {"type": "string", "description": "The specific role or job title of the member."},
-                                "description": {"type": "string", "description": "A detailed, multi-point description formatted as a markdown bulleted list."}
-                            }, "required": ["name", "role", "description"]
+                                "description": {"type": "string", "description": "A detailed, multi-point description formatted as a markdown bulleted list."},
+                                "epilogue": {"type": "string", "description": "A brief description of the team that has been created and intended team dynamics."}
+                            }, "required": ["name", "role", "description", "epilogue"]
                         }
                     }
                 }, "required": ["team_members"]
@@ -131,6 +132,7 @@ def create_team_tabs():
                     st.session_state.editing_agent_index = i
                     st.rerun()
         st.divider()
+        st.write(st.session_state.team_details[0].get("epilogue", ""))
 
 def render_edit_dialog():
     """Renders the dialog for editing an agent by defining and then calling a decorated function."""
