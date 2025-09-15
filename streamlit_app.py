@@ -29,7 +29,7 @@ For each team member, you must provide a detailed description formatted as a bul
 
 Do not just list the team members in text; you must use the provided tool to create them. Also, do not name agents with personal names unless excplicitly instructed by the user.
 
-After creating the team, you should also call the `create_agents` function to instantiate the actual AI agents based on the team details.
+After creating the team, use the `create_agents` function to instantiate the actual AI agents based on the team details. DO NOT CALL THIS TOOL UNTIL USER APPROVES.
 """
 
 EDIT_SYSTEM_PROMPT = """
