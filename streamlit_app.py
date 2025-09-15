@@ -364,7 +364,11 @@ with chat_container:
             if isinstance(message["content"], dict):
                 content_type = message["content"].get("type")
                 if content_type == "team_creation":
-                    st.success("Team created successfully!")
+                    create_team_tabs()
+                elif content_type == "agent_creation":
+                    st.success("Agent(s) created successfully!")
+                else:
+                    st.markdown(message["content"])
             else:
                 st.markdown(message["content"])
 
