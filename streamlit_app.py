@@ -55,7 +55,7 @@ with st.sidebar:
     
     # Display agent creation status
     if "agents_created" in st.session_state and st.session_state.agents_created:
-        st.success(f"✅ {len(st.session_state.agent_objects)} agents created")
+        st.success(f"{len(st.session_state.agent_objects)} agents created")
         if st.button("View Agent Details"):
             st.session_state.show_agent_details = not st.session_state.get("show_agent_details", False)
         
@@ -260,10 +260,6 @@ def create_team_tabs():
                 # Show agent status if agents have been created
                 if "agent_objects" in st.session_state and st.session_state.agents_created:
                     agent_obj = st.session_state.agent_objects[i]
-                    if agent_obj["sdk_created"]:
-                        st.success("✅ Agent created with SDK")
-                    else:
-                        st.info("📋 Agent configuration ready")
                 
                 # Use a unique key by appending the team_unique_key from session_state
                 if st.button("Edit Agent", key=f"edit_btn_{i}_{st.session_state.team_unique_key}"):
