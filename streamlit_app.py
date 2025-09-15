@@ -29,7 +29,7 @@ For each team member, you must provide a detailed description formatted as a bul
 
 Do not just list the team members in text; you must use the provided tool to create them. Also, do not name agents with personal names unless excplicitly instructed by the user.
 
-After creating the team, use the `create_agents` function to instantiate the actual AI agents based on the team details. DO NOT CALL THIS TOOL UNTIL USER APPROVES.
+After creating the team, you should also call the `create_agents` function to instantiate the actual AI agents based on the team details.
 """
 
 EDIT_SYSTEM_PROMPT = """
@@ -55,7 +55,7 @@ with st.sidebar:
     
     # Display agent creation status
     if "agents_created" in st.session_state and st.session_state.agents_created:
-        st.success(f"{len(st.session_state.agent_objects)} agents created")
+        st.success(f"✅ {len(st.session_state.agent_objects)} agents created")
         if st.button("View Agent Details"):
             st.session_state.show_agent_details = not st.session_state.get("show_agent_details", False)
         
@@ -243,10 +243,6 @@ def handle_agent_detail_change(agent_index, field):
 def create_team_tabs():
     """Renders team member tabs and the edit button for each."""
     if "team_details" in st.session_state and st.session_state.team_details:
-        # Ensure a unique key is generated once to avoid duplicate widget keys
-        if "team_unique_key" not in st.session_state:
-            import uuid
-            st.session_state.team_unique_key = uuid.uuid4().hex
         team_members = st.session_state.team_details
         tabs = st.tabs([member["name"] for member in team_members])
         for i, member in enumerate(team_members):
@@ -260,17 +256,17 @@ def create_team_tabs():
                 # Show agent status if agents have been created
                 if "agent_objects" in st.session_state and st.session_state.agents_created:
                     agent_obj = st.session_state.agent_objects[i]
+                    if agent_obj["sdk_created"]:
+                        st.success("✅ Agent created with SDK")
+                    else:
+                        st.info("📋 Agent configuration ready")
                 
-                # Use a unique key by appending the team_unique_key from session_state
-                if st.button("Edit Agent", key=f"edit_btn_{i}_{st.session_state.team_unique_key}"):
+                if st.button("Edit Agent", key=f"edit_btn_{i}"):
                     st.session_state.editing_agent_index = i
                     st.rerun()
         st.divider()
         if len(team_members) > 0 and "epilogue" in team_members[0]:
             st.write(team_members[0].get("epilogue", ""))
-    
-    # Optionally, you can clear the unique key after rendering if needed
-    # st.session_state.pop("team_unique_key", None)
 
 def render_edit_dialog():
     """Renders the dialog for editing an agent by defining and then calling a decorated function."""
