@@ -243,6 +243,10 @@ def handle_agent_detail_change(agent_index, field):
 def create_team_tabs():
     """Renders team member tabs and the edit button for each."""
     if "team_details" in st.session_state and st.session_state.team_details:
+        # Ensure a unique key is generated once to avoid duplicate widget keys
+        if "team_unique_key" not in st.session_state:
+            import uuid
+            st.session_state.team_unique_key = uuid.uuid4().hex
         team_members = st.session_state.team_details
         tabs = st.tabs([member["name"] for member in team_members])
         for i, member in enumerate(team_members):
@@ -261,12 +265,16 @@ def create_team_tabs():
                     else:
                         st.info("📋 Agent configuration ready")
                 
-                if st.button("Edit Agent", key=f"edit_btn_{i}"):
+                # Use a unique key by appending the team_unique_key from session_state
+                if st.button("Edit Agent", key=f"edit_btn_{i}_{st.session_state.team_unique_key}"):
                     st.session_state.editing_agent_index = i
                     st.rerun()
         st.divider()
         if len(team_members) > 0 and "epilogue" in team_members[0]:
             st.write(team_members[0].get("epilogue", ""))
+    
+    # Optionally, you can clear the unique key after rendering if needed
+    # st.session_state.pop("team_unique_key", None)
 
 def render_edit_dialog():
     """Renders the dialog for editing an agent by defining and then calling a decorated function."""
